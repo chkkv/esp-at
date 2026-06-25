@@ -1,6 +1,8 @@
 name: Build ESP-AT Project
 
-on: push
+on:
+  push:
+  workflow_dispatch:
 
 jobs:
   build-esp32-wroom-at:
@@ -250,4 +252,32 @@ jobs:
       module_name: MINI
       artifacts_name: esp32s2-mini-debug-at
       enable_at_debug: true
+    secrets: inherit
+
+  build-esp8266-wroom02-at:
+    uses: ./.github/workflows/build_template_esp8266.yml
+    with:
+      module_name: WROOM-02
+      artifacts_name: esp8266-wroom02-at
+    secrets: inherit
+
+  build-esp8266-wroom-5v2l-at:
+    uses: ./.github/workflows/build_template_esp8266.yml
+    with:
+      module_name: WROOM-5V2L
+      artifacts_name: esp8266-wroom-5v2l-at
+    secrets: inherit
+
+  build-esp8285-1mb-at:
+    uses: ./.github/workflows/build_template_esp8266.yml
+    with:
+      module_name: ESP8266_1MB
+      artifacts_name: esp8285-1mb-at
+    secrets: inherit
+
+  build-esp8266-wroom02-n-at:
+    uses: ./.github/workflows/build_template_esp8266.yml
+    with:
+      module_name: WROOM-02-N
+      artifacts_name: esp8266-wroom02-n-at
     secrets: inherit

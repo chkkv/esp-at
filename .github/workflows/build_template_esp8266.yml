@@ -1,0 +1,87 @@
+name: Reusable esp8266-at workflow template
+
+on:
+  workflow_call:
+    inputs:
+      module_name:
+        required: true
+        type: string
+      artifacts_name:
+        required: true
+        type: string
+      silence:
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      AT_OTA_TOKEN_WROOM_02:
+        required: false
+      AT_OTA_TOKEN_WROOM_S2:
+        required: false
+      AT_OTA_TOKEN_WROOM_5V2L:
+        required: false
+      AT_OTA_TOKEN_ESP8266_1MB:
+        required: false
+      AT_OTA_TOKEN_WROOM_02_N:
+        required: false
+
+jobs:
+  build-template-esp8266:
+    runs-on: ubuntu-latest
+    env:
+      PLATFORM: PLATFORM_ESP8266
+      MODULE_NAME: ${{ inputs.module_name }}
+      SILENCE: ${{ inputs.silence && 1 || 0 }}
+    steps:
+    - uses: actions/checkout@v6.0.2
+    - uses: actions/setup-python@v6.2.0
+      with:
+        python-version: '3.10'
+    - name: Set up environment variables
+      run: |
+        source .github/workflows/utils.sh && setup_env_variables
+    - name: Setup OTA tokens
+      run: |
+        cd components/at/private_include
+        rm -f at_ota_token.h
+        echo -e "#pragma once" >> at_ota_token.h
+        echo -e "#define CONFIG_ESP_AT_OTA_TOKEN_WROOM_02 \"${{ secrets.AT_OTA_TOKEN_WROOM_02 }}\"" >> at_ota_token.h
+        echo -e "#define CONFIG_ESP_AT_OTA_SSL_TOKEN_WROOM_02 \"${{ secrets.AT_OTA_TOKEN_WROOM_02 }}\"" >> at_ota_token.h
+        echo -e "#define CONFIG_ESP_AT_OTA_TOKEN_WROOM_S2 \"${{ secrets.AT_OTA_TOKEN_WROOM_S2 }}\"" >> at_ota_token.h
+        echo -e "#define CONFIG_ESP_AT_OTA_SSL_TOKEN_WROOM_S2 \"${{ secrets.AT_OTA_TOKEN_WROOM_S2 }}\"" >> at_ota_token.h
+        echo -e "#define CONFIG_ESP_AT_OTA_TOKEN_WROOM_5V2L \"${{ secrets.AT_OTA_TOKEN_WROOM_5V2L }}\"" >> at_ota_token.h
+        echo -e "#define CONFIG_ESP_AT_OTA_SSL_TOKEN_WROOM_5V2L \"${{ secrets.AT_OTA_TOKEN_WROOM_5V2L }}\"" >> at_ota_token.h
+        echo -e "#define CONFIG_ESP_AT_OTA_TOKEN_ESP8266_1MB \"${{ secrets.AT_OTA_TOKEN_ESP8266_1MB }}\"" >> at_ota_token.h
+        echo -e "#define CONFIG_ESP_AT_OTA_SSL_TOKEN_ESP8266_1MB \"${{ secrets.AT_OTA_TOKEN_ESP8266_1MB }}\"" >> at_ota_token.h
+        echo -e "#define CONFIG_ESP_AT_OTA_TOKEN_WROOM_02_N \"${{ secrets.AT_OTA_TOKEN_WROOM_02_N }}\"" >> at_ota_token.h
+        echo -e "#define CONFIG_ESP_AT_OTA_SSL_TOKEN_WROOM_02_N \"${{ secrets.AT_OTA_TOKEN_WROOM_02_N }}\"" >> at_ota_token.h
+        cd -
+    - name: Disable official OTA support
+      run: |
+        source .github/workflows/utils.sh && disable_official_ota_cmd
+    - name: Install compilation environment
+      run: |
+        ./build.py install
+    - name: Compile
+      run: |
+        ./build.py build
+    - name: Post process
+      run: |
+        cp .github/workflows/NOTES.txt NOTES.txt
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v7.0.0
+      with:
+        name: ${{ inputs.artifacts_name }}
+        path: |
+          sdkconfig
+          build/*.bin
+          build/*.elf
+          build/*.map
+          build/bootloader/*.bin
+          build/partition_table/*.bin
+          build/customized_partitions/*
+          build/flasher_args.json
+          build/project_description.json
+          build/download.config
+          build/factory/*
+          NOTES.txt
