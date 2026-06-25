@@ -2,10 +2,9 @@
 name: C/C++ CI
 
 on:
-  push:
+  workflow_dispatch:
     branches:
-      - master
-      - release/*
+      - '*'
 
 jobs:
   build-esp8266-wroom02-at:
