@@ -35,6 +35,7 @@
 #ifdef CONFIG_AT_BASE_ON_UART
 #include "esp_system.h"
 #include "driver/gpio.h"
+#include "esp_sleep.h"
 #include "driver/uart.h"
 #include "at_interface.h"
 
@@ -699,6 +700,19 @@ void at_pre_deepsleep_callback (void)
     }
     if (s_at_uart_port_pin.rts >= 0) {
         gpio_set_direction(s_at_uart_port_pin.rts, GPIO_MODE_DISABLE);
+    }
+
+    /* Configure RX as wakeup source */
+    if (s_at_uart_port_pin.rx >= 0) {
+        gpio_config_t io_conf = {
+            .pin_bit_mask = 1ULL << s_at_uart_port_pin.rx,
+            .mode = GPIO_MODE_INPUT,
+            .pull_up_en = GPIO_PULLUP_ENABLE,
+            .pull_down_en = GPIO_PULLDOWN_DISABLE,
+            .intr_type = GPIO_INTR_DISABLE,
+        };
+        gpio_config(&io_conf);
+        esp_deep_sleep_enable_gpio_wakeup(1ULL << s_at_uart_port_pin.rx, ESP_GPIO_WAKEUP_GPIO_LOW);
     }
 }
 
